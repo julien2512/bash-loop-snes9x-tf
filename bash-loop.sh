@@ -49,13 +49,26 @@ echo "smc_dir : "$smc_dir
 #one loop
 i=0
 
+on_loose1=0
+nb_loose1=0
+on_loose2=0
+nb_loose2=0
+end=0
+
 # init loop
 mkdir -p $tf_dir/$tf_work$i
-mkdir -p $tf_dir/"$tf_work"_output$i
+mkdir -p $tf_dir/"$tf_work"_output$i/images
 cp $tf_dir/$tf_work/* $tf_dir/$tf_work$i/
 
 mkdir -p $tf_dir/$tf_work$((i+1))
-mkdir -p $tf_dir/"$tf_work"_output$((i+1))
+mkdir -p $tf_dir/"$tf_work"_output$((i+1))/images
+
+if [ -d $tf_dir/"$tf_work"_output ];
+then
+  checkpoint="--checkpoint ""$tf_work""_output"
+else
+  checkpoint=""
+fi
 
 # pix2pix.py train i step 1
 #   input
@@ -63,7 +76,7 @@ mkdir -p $tf_dir/"$tf_work"_output$((i+1))
 #   output
 #     $tf_work : model + outputs + next_commands
 cd $tf_dir
-python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir $tf_work$i --max_epochs 1 --output_dir "$tf_work"_output$i --display_freq 1 --seed 12345
+python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir $tf_work$i --max_epochs 1 --output_dir "$tf_work"_output$i --display_freq 1 --seed 12345 $checkpoint
 
 # bus tf_i => snes9x step 1
 cp "$tf_work"_output$i/images/*.next_commands $smc_dir/$rom_name.next_commands
@@ -74,7 +87,7 @@ cp "$tf_work"_output$i/images/*.next_commands $smc_dir/$rom_name.next_commands
 #   output
 #     $smc_dir : rom_name.$((i+1)) + rom_name$number.png + rom_name.meta
 cd $snes9x_dir/gtk
-./snes9x-gtk -savestateattheendfilename $smc_dir/$rom_name.$((i+1)) -killafterxframes 100 -snapshot $smc_dir/$rom_name.$((i)) -tensorflowcommandsfile1 $smc_dir/$rom_name.next_commands -port1 tensorflow1 -tensorflowrate 50 -autosnapshotrate 4 $smc_dir/$rom_name.smc
+xvfb-run ./snes9x-gtk -savestateattheendfilename $smc_dir/$rom_name.$((i+1)) -killafterxframes 100 -snapshot $smc_dir/$rom_name.$((i)) -tensorflowcommandsfile1 $smc_dir/$rom_name.next_commands -port1 tensorflow1 -tensorflowrate 50 -autosnapshotrate 4 $smc_dir/$rom_name.smc
 
 # bus snes9x => tf_i step 2
 cd $smc_dir
@@ -91,16 +104,21 @@ cp `ls -x1 *.png | tail -n1` $tf_dir/$tf_work$((i+1))/$i.png
 #   output
 #     $tf_work : model + outputs + next_commands
 cd $tf_dir
-python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir $tf_work$i --max_epochs 1 --output_dir "$tf_work"_output$i --display_freq 1 --seed 12345
+python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir $tf_work$i --max_epochs 1 --output_dir "$tf_work"_output$i --display_freq 1 --seed 12345 $checkpoint
 
 # loop
-while [ $i -le 10 ]
+while [ ! $end -eq 1 ]
 do
+
+echo "#####################"
+echo "P1: $nb_loose1"
+echo "P2: $nb_loose2"
+echo "#####################"
 
 i=$((i+1))
 
 mkdir -p $tf_dir/$tf_work$((i+1))
-mkdir -p $tf_dir/"$tf_work"_output$((i+1))
+mkdir -p $tf_dir/"$tf_work"_output$((i+1))/images
 
 # pix2pix.py train i step 1
 #   input
@@ -119,7 +137,7 @@ cp "$tf_work"_output$i/images/*.next_commands $smc_dir/$rom_name.next_commands
 #   output
 #     $smc_dir : rom_name.$((i+1)) + rom_name$number.png + rom_name.meta
 cd $snes9x_dir/gtk
-./snes9x-gtk -savestateattheendfilename $smc_dir/$rom_name.$((i+1)) -killafterxframes 100 -snapshot $smc_dir/$rom_name.$((i)) -tensorflowcommandsfile1 $smc_dir/$rom_name.next_commands -port1 tensorflow1 -tensorflowrate 50 -autosnapshotrate 4 $smc_dir/$rom_name.smc
+xvfb-run ./snes9x-gtk -savestateattheendfilename $smc_dir/$rom_name.$((i+1)) -killafterxframes 100 -snapshot $smc_dir/$rom_name.$((i)) -tensorflowcommandsfile1 $smc_dir/$rom_name.next_commands -port1 tensorflow1 -tensorflowrate 50 -autosnapshotrate 4 $smc_dir/$rom_name.smc
 
 # bus snes9x => tf_i step 2
 cd $smc_dir
@@ -136,6 +154,83 @@ cp `ls -x1 *.png | tail -n1` $tf_dir/$tf_work$((i+1))/$i.png
 #   output
 #     $tf_work : model + outputs + next_commands
 cd $tf_dir
-python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir $tf_work$i --max_epochs 1 --output_dir "$tf_work"_output$i --display_freq 1 --seed 12345
+python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir $tf_work$i --max_epochs 1 --output_dir "$tf_work"_output$i --display_freq 1 --seed 12345 --checkpoint "$tf_work"_output$((i-1))
+
+p1_life=`cat $tf_dir/$tf_work$((i))/$i.meta_targets | cut -f1`
+p2_life=`cat $tf_dir/$tf_work$((i))/$i.meta_targets | cut -f2`
+
+if [ "$p1_life" -eq 0 ];
+then
+  if [ "$on_loose1" -eq 0 ];
+  then
+    on_loose1=1
+    echo "########"
+    echo "P1 loose"
+    echo "########"
+  fi
+else
+  if [ "$on_loose1" -eq 1 ];
+  then
+    nb_loose1=$((nb_loose1+1))
+    on_loose1=0
+    echo "#######"
+    echo "P1=$nb_loose1"
+    echo "#######"
+  fi
+fi
+
+if [ "$p2_life" -eq 0 ];
+then
+  if [ "$on_loose2" -eq 0 ];
+  then
+    on_loose2=1
+    echo "#######"
+    echo "P2 loose"
+    echo "#######"
+  fi
+else
+  if [ "$on_loose2" -eq 1 ];
+  then
+    nb_loose2=$((nb_loose2+1))
+    on_loose2=0
+    echo "#######"
+    echo "P2=$nb_loose2"
+    echo "#######"
+  fi
+fi
+
+if [ "$p1_life" -eq 0 ];
+then
+  if [ "$p2_life" -eq 0 ];
+  then
+    end=1
+    echo "#######"
+    echo "END"
+    echo "#######"
+  fi
+fi
 
 done
+
+echo "Get gif"
+cd $smc_dir
+convert -delay 20 -loop 0 Street*.png $snes9x_dir/street`date +%s`.gif
+
+echo "Saving"
+cd $tf_dir
+if [ -d "$tf_work"_output/images ];
+then
+  rm -Rf "$tf_work"_output/*
+else
+  mkdir -p "$tf_work"_output/images
+fi
+cp -R "$tf_work"_output$i/* "$tf_work"_output
+
+echo "Cleaning"
+cd $tf_dir
+for j in `seq 0 $((i+1))`; do rm -Rf snes9x_inputs$j; done
+for j in `seq 0 $((i+1))`; do rm -Rf snes9x_inputs_output$j; done
+
+cd $smc_dir
+rm *
+cp "$smc_dir"_starter/* .
