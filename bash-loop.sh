@@ -25,17 +25,73 @@ then usage=true;
 echo "Missing 5th parameter";
 fi
 
+if [ -z $6 ];
+then usage=true;
+echo "Mission 6th parameter";
+fi
+
+if [ -z $7 ];
+then usage=true;
+echo "Mission 7th parameter";
+fi
+
 if [ $usage ];
 then
-echo $0 tf_dir tf_work snes9x_dir smc_dir rom_name
+echo $0 tf_dir tf_work snes9x_dir smc_dir rom_name session battle
 exit
 fi
 
+session=$6
+battle=$7
 tf_dir=$1
 tf_work=$2
 snes9x_dir=$3
 smc_dir=$4
 rom_name=$5
+
+min() {
+    printf "%s\n" "$@" | sort -g | head -n1
+}
+max() {
+    printf "%s\n" "$@" | sort -g | tail -n1
+}
+write_stats() {
+    echo "#!/bin/bash" > ./stats.sh
+    echo "ryu_battles=$ryu_battles" >> ./stats.sh
+    echo "ryu_rounds=$ryu_rounds" >> ./stats.sh
+    echo "ryu_maxlife=$ryu_maxlife" >> ./stats.sh
+    echo "ryu_minlife=$ryu_minlife" >> ./stats.sh
+    echo "zan_battles=$zan_battles" >> ./stats.sh
+    echo "zan_rounds=$zan_rounds" >> ./stats.sh
+    echo "zan_maxlife=$zan_maxlife" >> ./stats.sh
+    echo "zan_minlife=$zan_minlife" >> ./stats.sh
+}
+write_js_stats() {
+    echo "var ryu_battles=$ryu_battles;" > ./stats.js
+    echo "var ryu_rounds=$ryu_rounds;" >> ./stats.js
+    echo "var ryu_maxlife=$ryu_maxlife;" >> ./stats.js
+    echo "var ryu_minlife=$ryu_minlife;" >> ./stats.js
+    echo "var zan_battles=$zan_battles;" >> ./stats.js
+    echo "var zan_rounds=$zan_rounds;" >> ./stats.js
+    echo "var zan_maxlife=$zan_maxlife;" >> ./stats.js
+    echo "var zan_minlife=$zan_minlife;" >> ./stats.js
+}
+
+cd $snes9x_dir
+if [ -e "stats.sh" ];
+then
+  source ./stats.sh
+else
+  ryu_battles=0
+  ryu_rounds=0
+  ryu_maxlife=0
+  ryu_minlife=176
+  zan_battles=0
+  zan_rounds=0
+  zan_maxlife=0
+  zan_minlife=176
+fi
+
 
 echo "bash-loop for tf vs snes9x"
 echo "tf_dir : "$tf_dir
@@ -54,6 +110,12 @@ nb_loose1=0
 on_loose2=0
 nb_loose2=0
 end=0
+
+echo -e "-------------------------------------"
+echo -e "\tBattles\tRounds\tMax\tMin\tCurrent Loose"
+echo -e "Ryu\t$ryu_battles\t$ryu_rounds\t$ryu_maxlife\t$ryu_minlife\t$nb_loose1"
+echo -e "Zangief\t$zan_battles\t$zan_rounds\t$zan_maxlife\t$zan_minlife\t$nb_loose2"
+echo -e "-------------------------------------"
 
 # init loop
 mkdir -p $tf_dir/$tf_work$i
@@ -87,7 +149,7 @@ cp "$tf_work"_output$i/images/*.next_commands $smc_dir/$rom_name.next_commands
 #   output
 #     $smc_dir : rom_name.$((i+1)) + rom_name$number.png + rom_name.meta
 cd $snes9x_dir/gtk
-xvfb-run ./snes9x-gtk -savestateattheendfilename $smc_dir/$rom_name.$((i+1)) -killafterxframes 100 -snapshot $smc_dir/$rom_name.$((i)) -tensorflowcommandsfile1 $smc_dir/$rom_name.next_commands -port1 tensorflow1 -tensorflowrate 50 -autosnapshotrate 4 $smc_dir/$rom_name.smc
+xvfb-run ./snes9x-gtk -savestateattheendfilename $smc_dir/$rom_name.$((i+1)) -killafterxframes 50 -snapshot $smc_dir/$rom_name.$((i)) -tensorflowcommandsfile1 $smc_dir/$rom_name.next_commands -port1 tensorflow1 -tensorflowrate 50 -autosnapshotrate 4 $smc_dir/$rom_name.smc
 
 # bus snes9x => tf_i step 2
 cd $smc_dir
@@ -110,10 +172,11 @@ python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir 
 while [ ! $end -eq 1 ]
 do
 
-echo "#####################"
-echo "P1: $nb_loose1"
-echo "P2: $nb_loose2"
-echo "#####################"
+echo -e "-------------------------------------"
+echo -e "\tBattles\tRounds\tMax\tMin\tCurrent Loose"
+echo -e "Ryu\t$ryu_battles\t$ryu_rounds\t$ryu_maxlife\t$ryu_minlife\t$nb_loose1"
+echo -e "Zangief\t$zan_battles\t$zan_rounds\t$zan_maxlife\t$zan_minlife\t$nb_loose2"
+echo -e "-------------------------------------"
 
 i=$((i+1))
 
@@ -137,7 +200,7 @@ cp "$tf_work"_output$i/images/*.next_commands $smc_dir/$rom_name.next_commands
 #   output
 #     $smc_dir : rom_name.$((i+1)) + rom_name$number.png + rom_name.meta
 cd $snes9x_dir/gtk
-xvfb-run ./snes9x-gtk -savestateattheendfilename $smc_dir/$rom_name.$((i+1)) -killafterxframes 100 -snapshot $smc_dir/$rom_name.$((i)) -tensorflowcommandsfile1 $smc_dir/$rom_name.next_commands -port1 tensorflow1 -tensorflowrate 50 -autosnapshotrate 4 $smc_dir/$rom_name.smc
+xvfb-run ./snes9x-gtk -savestateattheendfilename $smc_dir/$rom_name.$((i+1)) -killafterxframes 50 -snapshot $smc_dir/$rom_name.$((i)) -tensorflowcommandsfile1 $smc_dir/$rom_name.next_commands -port1 tensorflow1 -tensorflowrate 50 -autosnapshotrate 4 $smc_dir/$rom_name.smc
 
 # bus snes9x => tf_i step 2
 cd $smc_dir
@@ -159,6 +222,8 @@ python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir 
 p1_life=`cat $tf_dir/$tf_work$((i))/$i.meta_targets | cut -f1`
 p2_life=`cat $tf_dir/$tf_work$((i))/$i.meta_targets | cut -f2`
 
+cd $snes9x_dir
+
 if [ "$p1_life" -eq 0 ];
 then
   if [ "$on_loose1" -eq 0 ];
@@ -167,15 +232,18 @@ then
     echo "########"
     echo "P1 loose"
     echo "########"
+    ryu_maxlife="$(max $p1_life $ryu_maxlife)"
+    ryu_minlife="$(min $p1_life $ryu_minlife)"
+    zan_rounds=$((zan_rounds+1))
+    zan_maxlife="$(max $p2_life $zan_maxlife)"
+    zan_minlife="$(min $p2_life $zan_minlife)"
+    nb_loose1=$((nb_loose1+1))
+    write_stats
   fi
 else
   if [ "$on_loose1" -eq 1 ];
   then
-    nb_loose1=$((nb_loose1+1))
     on_loose1=0
-    echo "#######"
-    echo "P1=$nb_loose1"
-    echo "#######"
   fi
 fi
 
@@ -187,34 +255,48 @@ then
     echo "#######"
     echo "P2 loose"
     echo "#######"
+    ryu_maxlife="$(max $p1_life $ryu_maxlife)"
+    ryu_minlife="$(min $p1_life $ryu_minlife)"
+    ryu_rounds=$((ryu_rounds+1))
+    zan_maxlife="$(max $p2_life $zan_maxlife)"
+    zan_minlife="$(min $p2_life $zan_minlife)"
+    nb_loose2=$((nb_loose2+1))
+    write_stats
   fi
 else
   if [ "$on_loose2" -eq 1 ];
   then
-    nb_loose2=$((nb_loose2+1))
     on_loose2=0
-    echo "#######"
-    echo "P2=$nb_loose2"
-    echo "#######"
   fi
 fi
 
-if [ "$p1_life" -eq 0 ];
+if [ $nb_loose1 -eq 2 ] || [ $nb_loose2 -eq 2 ];
 then
-  if [ "$p2_life" -eq 0 ];
-  then
     end=1
     echo "#######"
     echo "END"
     echo "#######"
-  fi
+
+    if [ "$nb_loose1" -eq 2 ];
+    then
+      zan_battles=$((zan_battles+1))
+    fi
+    if [ "$nb_loose2" -eq 2 ];
+    then
+      ryu_battles=$((ryu_battles+1))
+    fi
+    write_stats
 fi
 
 done
 
 echo "Get gif"
 cd $smc_dir
+for j in `ls Street*.png`;
+do convert -pointsize 20 -fill yellow -draw "text 5,20 \"Session $session Battle $battle\"" $j $j;
+done
 convert -delay 20 -loop 0 Street*.png $snes9x_dir/street`date +%s`.gif
+
 
 echo "Saving"
 cd $tf_dir
@@ -225,6 +307,9 @@ else
   mkdir -p "$tf_work"_output/images
 fi
 cp -R "$tf_work"_output$i/* "$tf_work"_output
+
+cd $snes9x_dir
+write_js_stats
 
 echo "Cleaning"
 cd $tf_dir
