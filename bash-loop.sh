@@ -80,7 +80,7 @@ write_js_stats() {
     echo "var zan_minlife=$zan_minlife;" >> ./stats.js
     echo "var time_min=$time_min;" >> ./stats.js
     echo "var time_max=$time_max;" >> ./stats.js
-    echo "var best_matchs=$best_matchs;" >> ./stats.js
+    echo "var best_matchs=\"$best_matchs\";" >> ./stats.js
 }
 echo_stats() {
 echo -e "----------------------------------------------------"
@@ -257,30 +257,31 @@ else
   then
     on_loose1=0
   fi
-fi
 
-if [ "$p2_life" -eq 0 ];
-then
-  if [ "$on_loose2" -eq 0 ];
+  # assume there will not be any draw.
+  if [ $p2_life -eq 0 ];
   then
-    on_loose2=1
-    echo "#######"
-    echo "P2 loose"
-    echo "#######"
-    ryu_maxlife="$(max $p1_life $ryu_maxlife)"
-    ryu_minlife="$(min $p1_life $ryu_minlife)"
-    ryu_rounds=$((ryu_rounds+1))
-    zan_maxlife="$(max $p2_life $zan_maxlife)"
-    zan_minlife="$(min $p2_life $zan_minlife)"
-    nb_loose2=$((nb_loose2+1))
-    time_min="$(min $time_min $time)"
-    time_max="$(max $time_max $time)"
-    write_stats
-  fi
-else
-  if [ "$on_loose2" -eq 1 ];
-  then
-    on_loose2=0
+    if [ "$on_loose2" -eq 0 ];
+    then
+      on_loose2=1
+      echo "#######"
+      echo "P2 loose"
+      echo "#######"
+      ryu_maxlife="$(max $p1_life $ryu_maxlife)"
+      ryu_minlife="$(min $p1_life $ryu_minlife)"
+      ryu_rounds=$((ryu_rounds+1))
+      zan_maxlife="$(max $p2_life $zan_maxlife)"
+      zan_minlife="$(min $p2_life $zan_minlife)"
+      nb_loose2=$((nb_loose2+1))
+      time_min="$(min $time_min $time)"
+      time_max="$(max $time_max $time)"
+      write_stats
+    fi
+  else
+    if [ "$on_loose2" -eq 1 ];
+    then
+      on_loose2=0
+    fi
   fi
 fi
 
@@ -299,9 +300,9 @@ then
     then
       ryu_battles=$((ryu_battles+1))
     fi
-    if [ $nb_loose2 -ge 1 ];
+    if [ "$nb_loose2" -ge 1 ];
     then
-      best_matchs=$best_matchs $battle
+      best_matchs="$best_matchs $battle"
     fi
     write_stats
 fi
