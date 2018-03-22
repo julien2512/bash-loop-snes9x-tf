@@ -65,6 +65,9 @@ write_stats() {
     echo "zan_rounds=$zan_rounds" >> ./stats.sh
     echo "zan_maxlife=$zan_maxlife" >> ./stats.sh
     echo "zan_minlife=$zan_minlife" >> ./stats.sh
+    echo "time_min=$time_min" >> ./stats.sh
+    echo "time_max=$time_max" >> ./stats.sh
+    echo "best_matchs=$best_matchs" >> ./stats.sh
 }
 write_js_stats() {
     echo "var ryu_battles=$ryu_battles;" > ./stats.js
@@ -75,6 +78,17 @@ write_js_stats() {
     echo "var zan_rounds=$zan_rounds;" >> ./stats.js
     echo "var zan_maxlife=$zan_maxlife;" >> ./stats.js
     echo "var zan_minlife=$zan_minlife;" >> ./stats.js
+    echo "var time_min=$time_min;" >> ./stats.js
+    echo "var time_max=$time_max;" >> ./stats.js
+    echo "var best_matchs=$best_matchs;" >> ./stats.js
+}
+echo_stats() {
+echo -e "----------------------------------------------------"
+echo -e "\tBattles\tRounds\tMax\tMin\tLoose\tMax_t\tMin_t"
+echo -e "Ryu\t$ryu_battles\t$ryu_rounds\t$ryu_maxlife\t$ryu_minlife\t$nb_loose1\t$time_max\t$time_max"
+echo -e "Zangief\t$zan_battles\t$zan_rounds\t$zan_maxlife\t$zan_minlife\t$nb_loose2"
+echo -e "----------------------------------------------------"
+echo -e "Best matchs: $best_matchs"
 }
 
 cd $snes9x_dir
@@ -90,6 +104,9 @@ else
   zan_rounds=0
   zan_maxlife=0
   zan_minlife=176
+  best_matchs=
+  time_min=147
+  time_max=0
 fi
 
 
@@ -111,11 +128,7 @@ on_loose2=0
 nb_loose2=0
 end=0
 
-echo -e "-------------------------------------"
-echo -e "\tBattles\tRounds\tMax\tMin\tCurrent Loose"
-echo -e "Ryu\t$ryu_battles\t$ryu_rounds\t$ryu_maxlife\t$ryu_minlife\t$nb_loose1"
-echo -e "Zangief\t$zan_battles\t$zan_rounds\t$zan_maxlife\t$zan_minlife\t$nb_loose2"
-echo -e "-------------------------------------"
+echo_stats
 
 # init loop
 mkdir -p $tf_dir/$tf_work$i
@@ -172,11 +185,7 @@ python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir 
 while [ ! $end -eq 1 ]
 do
 
-echo -e "-------------------------------------"
-echo -e "\tBattles\tRounds\tMax\tMin\tCurrent Loose"
-echo -e "Ryu\t$ryu_battles\t$ryu_rounds\t$ryu_maxlife\t$ryu_minlife\t$nb_loose1"
-echo -e "Zangief\t$zan_battles\t$zan_rounds\t$zan_maxlife\t$zan_minlife\t$nb_loose2"
-echo -e "-------------------------------------"
+echo_stats
 
 i=$((i+1))
 
@@ -221,6 +230,7 @@ python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir 
 
 p1_life=`cat $tf_dir/$tf_work$((i))/$i.meta_targets | cut -f1`
 p2_life=`cat $tf_dir/$tf_work$((i))/$i.meta_targets | cut -f2`
+time=`cat $tf_dir/$tf_work$((i))/$i.meta_targets | cut -f3`
 
 cd $snes9x_dir
 
@@ -238,6 +248,8 @@ then
     zan_maxlife="$(max $p2_life $zan_maxlife)"
     zan_minlife="$(min $p2_life $zan_minlife)"
     nb_loose1=$((nb_loose1+1))
+    time_min="$(min $time_min $time)"
+    time_max="$(max $time_max $time)"
     write_stats
   fi
 else
@@ -261,6 +273,8 @@ then
     zan_maxlife="$(max $p2_life $zan_maxlife)"
     zan_minlife="$(min $p2_life $zan_minlife)"
     nb_loose2=$((nb_loose2+1))
+    time_min="$(min $time_min $time)"
+    time_max="$(max $time_max $time)"
     write_stats
   fi
 else
@@ -284,6 +298,10 @@ then
     if [ "$nb_loose2" -eq 2 ];
     then
       ryu_battles=$((ryu_battles+1))
+    fi
+    if [ $nb_loose2 -ge 1 ];
+    then
+      best_matchs=$best_matchs $battle
     fi
     write_stats
 fi
