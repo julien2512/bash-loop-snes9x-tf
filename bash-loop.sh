@@ -65,9 +65,11 @@ write_stats() {
     echo "zan_rounds=$zan_rounds" >> ./stats.sh
     echo "zan_maxlife=$zan_maxlife" >> ./stats.sh
     echo "zan_minlife=$zan_minlife" >> ./stats.sh
+    echo "best_match_zan_minlife=$best_match_zan_minlife" >> ./stats.sh
     echo "time_min=$time_min" >> ./stats.sh
     echo "time_max=$time_max" >> ./stats.sh
-    echo "best_matchs=$best_matchs" >> ./stats.sh
+    echo "best_match=$best_match" >> ./stats.sh
+    echo "win_matchs=$win_matchs" >> ./stats.sh
 }
 write_js_stats() {
     echo "var ryu_battles=$ryu_battles;" > ./stats.js
@@ -78,17 +80,23 @@ write_js_stats() {
     echo "var zan_rounds=$zan_rounds;" >> ./stats.js
     echo "var zan_maxlife=$zan_maxlife;" >> ./stats.js
     echo "var zan_minlife=$zan_minlife;" >> ./stats.js
+    echo "var best_match_zan_minlife=$best_match_zan_minlife;" >> ./stats.js
     echo "var time_min=$time_min;" >> ./stats.js
     echo "var time_max=$time_max;" >> ./stats.js
-    echo "var best_matchs=\"$best_matchs\";" >> ./stats.js
+    echo "var best_match=\"$best_match\";" >> ./stats.js
+    echo "var win_matchs=\"$win_match\";" >> ./stats.js
 }
 echo_stats() {
 echo -e "----------------------------------------------------"
+echo -e "Session:$session Battle:$battle"
+echo -e "----------------------------------------------------"
 echo -e "\tBattles\tRounds\tMax\tMin\tLoose\tMax_t\tMin_t"
-echo -e "Ryu\t$ryu_battles\t$ryu_rounds\t$ryu_maxlife\t$ryu_minlife\t$nb_loose1\t$time_max\t$time_max"
+echo -e "Ryu\t$ryu_battles\t$ryu_rounds\t$ryu_maxlife\t$ryu_minlife\t$nb_loose1\t$time_max\t$time_min"
 echo -e "Zangief\t$zan_battles\t$zan_rounds\t$zan_maxlife\t$zan_minlife\t$nb_loose2"
 echo -e "----------------------------------------------------"
-echo -e "Best matchs: $best_matchs"
+echo -e "Best match Zangief life: $best_match_zan_minlife"
+echo -e "Best match: $best_match"
+echo -e "Win matchs: $win_matchs"
 }
 
 cd $snes9x_dir
@@ -104,7 +112,9 @@ else
   zan_rounds=0
   zan_maxlife=0
   zan_minlife=176
-  best_matchs=
+  best_match_zan_minlife=176
+  best_match=
+  win_matchs=
   time_min=147
   time_max=0
 fi
@@ -128,15 +138,15 @@ on_loose2=0
 nb_loose2=0
 end=0
 
-echo_stats
+#echo_stats
 
 # init loop
 mkdir -p $tf_dir/$tf_work$i
 mkdir -p $tf_dir/"$tf_work"_output$i/images
 cp $tf_dir/$tf_work/* $tf_dir/$tf_work$i/
 
-mkdir -p $tf_dir/$tf_work$((i+1))
-mkdir -p $tf_dir/"$tf_work"_output$((i+1))/images
+#mkdir -p $tf_dir/$tf_work$((i+1))
+#mkdir -p $tf_dir/"$tf_work"_output$((i+1))/images
 
 if [ -d $tf_dir/"$tf_work"_output ];
 then
@@ -150,44 +160,42 @@ fi
 #     $tf_work : png + meta
 #   output
 #     $tf_work : model + outputs + next_commands
-cd $tf_dir
-python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir $tf_work$i --max_epochs 1 --output_dir "$tf_work"_output$i --display_freq 1 --seed 12345 $checkpoint
+#cd $tf_dir
+#python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir $tf_work$i --max_epochs 1 --output_dir "$tf_work"_output$i --display_freq 1 --seed 12345 $checkpoint
 
 # bus tf_i => snes9x step 1
-cp "$tf_work"_output$i/images/*.next_commands $smc_dir/$rom_name.next_commands
+#cp "$tf_work"_output$i/images/*.next_commands $smc_dir/$rom_name.next_commands
 
 # snes9x-gtk play step 1
 #   input
 #     $smc_dir : rom_name.smc + rom_name.cht + rom_name.$i
 #   output
 #     $smc_dir : rom_name.$((i+1)) + rom_name$number.png + rom_name.meta
-cd $snes9x_dir/gtk
-xvfb-run ./snes9x-gtk -savestateattheendfilename $smc_dir/$rom_name.$((i+1)) -killafterxframes 50 -snapshot $smc_dir/$rom_name.$((i)) -tensorflowcommandsfile1 $smc_dir/$rom_name.next_commands -port1 tensorflow1 -tensorflowrate 50 -autosnapshotrate 4 $smc_dir/$rom_name.smc
+#cd $snes9x_dir/gtk
+#xvfb-run ./snes9x-gtk -savestateattheendfilename $smc_dir/$rom_name.$((i+1)) -killafterxframes 50 -snapshot $smc_dir/$rom_name.$((i)) -tensorflowcommandsfile1 $smc_dir/$rom_name.next_commands -port1 tensorflow1 -tensorflowrate 50 -autosnapshotrate 4 $smc_dir/$rom_name.smc
 
 # bus snes9x => tf_i step 2
-cd $smc_dir
-tail -n1 $rom_name.meta | sed '/^.*$/ s/$/\t0\t0\t0\t0\t0\t0\t0\t0\t0/' > $tf_dir/$tf_work$((i))/$i.meta_targets
+#cd $smc_dir
+#tail -n1 $rom_name.meta | sed '/^.*$/ s/$/\t0\t0\t0\t0\t0\t0\t0\t0\t0/' > $tf_dir/$tf_work$((i))/$i.meta_targets
 
 # bus snes9x => tf_i+1 step 1
-cd $smc_dir
-cp $tf_dir/$tf_work$((i))/$i.meta_targets $tf_dir/$tf_work$((i+1))/$i.meta
-cp `ls -x1 *.png | tail -n1` $tf_dir/$tf_work$((i+1))/$i.png
+#cd $smc_dir
+#cp $tf_dir/$tf_work$((i))/$i.meta_targets $tf_dir/$tf_work$((i+1))/$i.meta
+#cp `ls -x1 *.png | tail -n1` $tf_dir/$tf_work$((i+1))/$i.png
 
 # pix2pix.py train i step 2
 #   input
 #     $tf_work : png + meta + meta_targets
 #   output
 #     $tf_work : model + outputs + next_commands
-cd $tf_dir
-python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir $tf_work$i --max_epochs 1 --output_dir "$tf_work"_output$i --display_freq 1 --seed 12345 $checkpoint
+#cd $tf_dir
+#python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir $tf_work$i --max_epochs 1 --output_dir "$tf_work"_output$i --display_freq 1 --seed 12345 $checkpoint
 
 # loop
 while [ ! $end -eq 1 ]
 do
 
 echo_stats
-
-i=$((i+1))
 
 mkdir -p $tf_dir/$tf_work$((i+1))
 mkdir -p $tf_dir/"$tf_work"_output$((i+1))/images
@@ -198,7 +206,8 @@ mkdir -p $tf_dir/"$tf_work"_output$((i+1))/images
 #   output
 #     $tf_work : model + outputs + next_commands
 cd $tf_dir
-python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir $tf_work$i --max_epochs 1 --output_dir "$tf_work"_output$i --display_freq 1 --seed 12345 --checkpoint "$tf_work"_output$((i-1))
+python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir $tf_work$i --max_epochs 1 --output_dir "$tf_work"_output$i --display_freq 1 --seed 12345 $checkpoint
+# --checkpoint "$tf_work"_output$((i-1) # older release
 
 # bus tf_i => snes9x step 1
 cp "$tf_work"_output$i/images/*.next_commands $smc_dir/$rom_name.next_commands
@@ -226,7 +235,18 @@ cp `ls -x1 *.png | tail -n1` $tf_dir/$tf_work$((i+1))/$i.png
 #   output
 #     $tf_work : model + outputs + next_commands
 cd $tf_dir
-python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir $tf_work$i --max_epochs 1 --output_dir "$tf_work"_output$i --display_freq 1 --seed 12345 --checkpoint "$tf_work"_output$((i-1))
+python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir $tf_work$i --max_epochs 1 --output_dir "$tf_work"_output$i --display_freq 1 --seed 12345 $checkpoint 2> tf.out
+cat tf.out
+targets=`cat tf.out |grep targets|cut -c54- |sed "s/\ /,/g"`
+magic=`cat tf.out |grep magic_target|cut -c59- |sed "s/\ /,/g"`
+bet=`cat tf.out |grep next_bet|cut -c55- |sed "s/\ /,/g"`
+echo -e "//session $session battle $battle step $i" >> tf_stats_targets.js
+echo -e "$targets," >> tf_stats_targets.js
+echo -e "//session $session battle $battle step $i" >> tf_stats_magic.js
+echo -e "$magic," >> tf_stats_magic.js
+echo -e "//session $session battle $battle step $i" >> tf_stats_bet.js
+echo -e "$bet," >> tf_stats_bet.js
+rm tf.out
 
 p1_life=`cat $tf_dir/$tf_work$((i))/$i.meta_targets | cut -f1`
 p2_life=`cat $tf_dir/$tf_work$((i))/$i.meta_targets | cut -f2`
@@ -250,6 +270,13 @@ then
     nb_loose1=$((nb_loose1+1))
     time_min="$(min $time_min $time)"
     time_max="$(max $time_max $time)"
+
+    if [ "$p2_life" -lt $best_match_zan_minlife ];
+    then
+       best_match_zan_minlife=$p2_life
+       best_match=$battle
+    fi
+
     write_stats
   fi
 else
@@ -302,10 +329,14 @@ then
     fi
     if [ "$nb_loose2" -ge 1 ];
     then
-      best_matchs="$best_matchs $battle"
+      win_matchs="$win_matchs $battle"
     fi
     write_stats
 fi
+
+checkpoint="--checkpoint ""$tf_work"_output$i
+
+i=$((i+1))
 
 done
 
@@ -325,15 +356,15 @@ then
 else
   mkdir -p "$tf_work"_output/images
 fi
-cp -R "$tf_work"_output$i/* "$tf_work"_output
+cp -R "$tf_work"_output$((i-1))/* "$tf_work"_output
 
 cd $snes9x_dir
 write_js_stats
 
 echo "Cleaning"
 cd $tf_dir
-for j in `seq 0 $((i+1))`; do rm -Rf snes9x_inputs$j; done
-for j in `seq 0 $((i+1))`; do rm -Rf snes9x_inputs_output$j; done
+for j in `seq 0 $i`; do rm -Rf snes9x_inputs$j; done
+for j in `seq 0 $i`; do rm -Rf snes9x_inputs_output$j; done
 
 cd $smc_dir
 rm *
