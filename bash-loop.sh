@@ -155,47 +155,13 @@ else
   checkpoint=""
 fi
 
-# pix2pix.py train i step 1
-#   input
-#     $tf_work : png + meta
-#   output
-#     $tf_work : model + outputs + next_commands
-#cd $tf_dir
-#python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir $tf_work$i --max_epochs 1 --output_dir "$tf_work"_output$i --display_freq 1 --seed 12345 $checkpoint
-
-# bus tf_i => snes9x step 1
-#cp "$tf_work"_output$i/images/*.next_commands $smc_dir/$rom_name.next_commands
-
-# snes9x-gtk play step 1
-#   input
-#     $smc_dir : rom_name.smc + rom_name.cht + rom_name.$i
-#   output
-#     $smc_dir : rom_name.$((i+1)) + rom_name$number.png + rom_name.meta
-#cd $snes9x_dir/gtk
-#xvfb-run ./snes9x-gtk -savestateattheendfilename $smc_dir/$rom_name.$((i+1)) -killafterxframes 50 -snapshot $smc_dir/$rom_name.$((i)) -tensorflowcommandsfile1 $smc_dir/$rom_name.next_commands -port1 tensorflow1 -tensorflowrate 50 -autosnapshotrate 4 $smc_dir/$rom_name.smc
-
-# bus snes9x => tf_i step 2
-#cd $smc_dir
-#tail -n1 $rom_name.meta | sed '/^.*$/ s/$/\t0\t0\t0\t0\t0\t0\t0\t0\t0/' > $tf_dir/$tf_work$((i))/$i.meta_targets
-
-# bus snes9x => tf_i+1 step 1
-#cd $smc_dir
-#cp $tf_dir/$tf_work$((i))/$i.meta_targets $tf_dir/$tf_work$((i+1))/$i.meta
-#cp `ls -x1 *.png | tail -n1` $tf_dir/$tf_work$((i+1))/$i.png
-
-# pix2pix.py train i step 2
-#   input
-#     $tf_work : png + meta + meta_targets
-#   output
-#     $tf_work : model + outputs + next_commands
-#cd $tf_dir
-#python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir $tf_work$i --max_epochs 1 --output_dir "$tf_work"_output$i --display_freq 1 --seed 12345 $checkpoint
-
 # loop
 while [ ! $end -eq 1 ]
 do
 
 echo_stats
+
+seed=$[ ( $RANDOM % 1000000 )  + 1 ]
 
 mkdir -p $tf_dir/$tf_work$((i+1))
 mkdir -p $tf_dir/"$tf_work"_output$((i+1))/images
@@ -206,7 +172,7 @@ mkdir -p $tf_dir/"$tf_work"_output$((i+1))/images
 #   output
 #     $tf_work : model + outputs + next_commands
 cd $tf_dir
-python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir $tf_work$i --max_epochs 1 --output_dir "$tf_work"_output$i --display_freq 1 --seed 12345 $checkpoint
+python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir $tf_work$i --max_epochs 1 --output_dir "$tf_work"_output$i --display_freq 1 --seed $seed $checkpoint
 # --checkpoint "$tf_work"_output$((i-1) # older release
 
 # bus tf_i => snes9x step 1
@@ -235,7 +201,7 @@ cp `ls -x1 *.png | tail -n1` $tf_dir/$tf_work$((i+1))/$i.png
 #   output
 #     $tf_work : model + outputs + next_commands
 cd $tf_dir
-python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir $tf_work$i --max_epochs 1 --output_dir "$tf_work"_output$i --display_freq 1 --seed 12345 $checkpoint 2> tf.out
+python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir $tf_work$i --max_epochs 1 --output_dir "$tf_work"_output$i --display_freq 1 --seed $seed $checkpoint 2> tf.out
 cat tf.out
 targets=`cat tf.out |grep targets|cut -c54- |sed "s/\ /,/g"`
 magic=`cat tf.out |grep magic_target|cut -c59- |sed "s/\ /,/g"`
