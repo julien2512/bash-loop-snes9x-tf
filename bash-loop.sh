@@ -188,7 +188,21 @@ xvfb-run ./snes9x-gtk -savestateattheendfilename $smc_dir/$rom_name.$((i+1)) -ki
 
 # bus snes9x => tf_i step 2
 cd $smc_dir
-tail -n1 $rom_name.meta | sed '/^.*$/ s/$/\t0\t0\t0\t0\t0\t0\t0\t0\t0/' > $tf_dir/$tf_work$((i))/$i.meta_targets
+tail -n1 $rom_name.meta > $i.meta_targets.tmp
+
+p1_life=`cat $i.meta_targets.tmp | cut -f1`
+p2_life=`cat $i.meta_targets.tmp | cut -f2`
+time=`cat $i.meta_targets.tmp | cut -f3`
+
+#p2_life correction !
+#don't know why
+if [ "$p2_life" -eq 255 ];
+then
+  p2_life=0
+fi
+
+echo -e "$p1_life\t$p2_life\t$time\t0\t0\t0\t0\t0\t0\t0\t0\t0" > $tf_dir/$tf_work$((i))/$i.meta_targets
+rm $i.meta_targets.tmp
 
 # bus snes9x => tf_i+1 step 1
 cd $smc_dir
@@ -214,11 +228,19 @@ echo -e "//session $session battle $battle step $i" >> tf_stats_bet.js
 echo -e "$bet," >> tf_stats_bet.js
 rm tf.out
 
-p1_life=`cat $tf_dir/$tf_work$((i))/$i.meta_targets | cut -f1`
-p2_life=`cat $tf_dir/$tf_work$((i))/$i.meta_targets | cut -f2`
-time=`cat $tf_dir/$tf_work$((i))/$i.meta_targets | cut -f3`
-
 cd $snes9x_dir
+
+# no more time case simulate death
+# draw is not taked into account
+if [ "$time" -eq 0 ];
+then
+  if [ "$p1_life" -le "$p2_life" ];
+  then
+    p1_life=0
+  else
+    p2_life=0
+  fi
+fi
 
 if [ "$p1_life" -eq 0 ];
 then
