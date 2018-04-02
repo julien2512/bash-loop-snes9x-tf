@@ -84,7 +84,7 @@ write_js_stats() {
     echo "var time_min=$time_min;" >> ./stats.js
     echo "var time_max=$time_max;" >> ./stats.js
     echo "var best_match=\"$best_match\";" >> ./stats.js
-    echo "var win_matchs=\"$win_match\";" >> ./stats.js
+    echo "var win_matchs=\"$win_matchs\";" >> ./stats.js
 }
 echo_stats() {
 echo -e "----------------------------------------------------"
@@ -317,7 +317,12 @@ then
     fi
     if [ "$nb_loose2" -ge 1 ];
     then
-      win_matchs="$win_matchs $battle"
+      if [ "${#win_matchs}" -eq 0 ];
+      then
+        win_matchs=$battle
+      else
+        win_matchs="$win_matchs $battle"
+      fi
     fi
     write_stats
 fi
