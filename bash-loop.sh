@@ -69,7 +69,7 @@ write_stats() {
     echo "time_min=$time_min" >> ./stats.sh
     echo "time_max=$time_max" >> ./stats.sh
     echo "best_match=$best_match" >> ./stats.sh
-    echo "win_matchs=$win_matchs" >> ./stats.sh
+    echo "win_matchs=\"$win_matchs\"" >> ./stats.sh
 }
 write_js_stats() {
     echo "var ryu_battles=$ryu_battles;" > ./stats.js
@@ -193,6 +193,10 @@ tail -n1 $rom_name.meta > $i.meta_targets.tmp
 p1_life=`cat $i.meta_targets.tmp | cut -f1`
 p2_life=`cat $i.meta_targets.tmp | cut -f2`
 time=`cat $i.meta_targets.tmp | cut -f3`
+p1_x1=`cat $i.meta_targets.tmp | cut -f4`
+p1_x2=`cat $i.meta_targets.tmp | cut -f5`
+p2_x1=`cat $i.meta_targets.tmp | cut -f6`
+p2_x2=`cat $i.meta_targets.tmp | cut -f7`
 
 #p2_life correction !
 #don't know why
@@ -201,7 +205,7 @@ then
   p2_life=0
 fi
 
-echo -e "$p1_life\t$p2_life\t$time\t0\t0\t0\t0\t0\t0\t0\t0\t0" > $tf_dir/$tf_work$((i))/$i.meta_targets
+echo -e "$p1_life\t$p2_life\t$time\t$p1_x1\t$p1_x2\t$p2_x1\t$p2_x2\t0\t0\t0\t0\t0" > $tf_dir/$tf_work$((i))/$i.meta_targets
 rm $i.meta_targets.tmp
 
 # bus snes9x => tf_i+1 step 1
