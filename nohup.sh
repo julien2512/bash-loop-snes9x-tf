@@ -1,6 +1,6 @@
 #!/bin/bash
 
-session=8
+session=13
 battle=0
 
 tf_dir=/data/julien/WORK/pix2pix-tensorflow-snes9x
@@ -22,9 +22,33 @@ then
   echo -e "[" > $tf_dir/tf_stats_bet.js
 fi
 
+snapshot=0
+if [ -e "$smc_dir"_starter/Street.list ];
+then
+maxsnapshot=`cat ${smc_dir}_starter/Street.list | wc -l`
+echo "$maxsnapshot snapshots loaded"
+else
+maxsnapshot=0
+fi
+
 while [ true ];
 do
 battle=$((battle+1))
+
+if [ "$maxsnapshot" -gt 0 ];
+then
+  snapshot=$((snapshot+1))
+  if [ "$snapshot" -gt "$maxsnapshot" ];
+  then
+    snapshot=1
+  fi
+  snap=`cat ${smc_dir}_starter/Street.list | head -n$snapshot | tail -n1`
+  dir=`pwd`
+  cd "${smc_dir}_starter"
+  cp $snap $smc_dir/Street.0
+  cd $dir
+fi
+
 ./bash-loop.sh $tf_dir $tf_work $snes9x_dir $smc_dir $rom_name $session $battle;
 done
 
