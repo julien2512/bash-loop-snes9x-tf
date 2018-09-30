@@ -1,6 +1,6 @@
 #!/bin/bash
 
-session=13
+session=17
 battle=0
 
 tf_dir=/data/julien/WORK/pix2pix-tensorflow-snes9x
@@ -21,6 +21,12 @@ if [ ! -f "$tf_dir/tf_stats_bet.js" ];
 then
   echo -e "[" > $tf_dir/tf_stats_bet.js
 fi
+
+dir=`pwd`
+cd $smc_dir
+rm *
+cp "$smc_dir"_starter/* .
+cd $dir
 
 snapshot=0
 if [ -e "$smc_dir"_starter/Street.list ];
@@ -50,6 +56,7 @@ then
 fi
 
 ./bash-loop.sh $tf_dir $tf_work $snes9x_dir $smc_dir $rom_name $session $battle;
+
 done
 
 # remove by hand to restart from a specific battle number

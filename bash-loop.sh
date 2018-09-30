@@ -70,6 +70,9 @@ write_stats() {
     echo "time_max=$time_max" >> ./stats.sh
     echo "best_match=$best_match" >> ./stats.sh
     echo "win_matchs=\"$win_matchs\"" >> ./stats.sh
+    echo "p1_life_loss=$p1_life_loss" >> ./stats.sh
+    echo "p2_life_loss=$p2_life_loss" >> ./stats.sh
+    echo "time_loss=$time_loss" >> ./stats.sh
 }
 write_js_stats() {
     echo "var ryu_battles=$ryu_battles;" > ./stats.js
@@ -85,6 +88,9 @@ write_js_stats() {
     echo "var time_max=$time_max;" >> ./stats.js
     echo "var best_match=\"$best_match\";" >> ./stats.js
     echo "var win_matchs=\"$win_matchs\";" >> ./stats.js
+    echo "var p1_life_loss=$p1_life_loss" >> ./stats.js
+    echo "var p2_life_loss=$p2_life_loss" >> ./stats.js
+    echo "var time_loss=$time_loss" >> ./stats.js
 }
 echo_stats() {
 echo -e "----------------------------------------------------"
@@ -97,6 +103,7 @@ echo -e "----------------------------------------------------"
 echo -e "Best match Zangief life: $best_match_zan_minlife"
 echo -e "Best match: $best_match"
 echo -e "Win matchs: $win_matchs"
+echo -e "loss : p1=$p1_life_loss p2=$p2_life_loss time=$time_loss"
 }
 
 cd $snes9x_dir
@@ -117,6 +124,9 @@ else
   win_matchs=
   time_min=147
   time_max=0
+  p1_life_loss=0
+  p2_life_loss=0
+  time_loss=0
 fi
 
 
@@ -224,12 +234,17 @@ cat tf.out
 targets=`cat tf.out |grep targets|cut -c54- |sed "s/\ /,/g"`
 magic=`cat tf.out |grep magic_target|cut -c59- |sed "s/\ /,/g"`
 bet=`cat tf.out |grep next_bet|cut -c55- |sed "s/\ /,/g"`
+p1_life_loss=`cat tf.out |grep p1_life_loss|cut -c59- | sed "s/\ /,/g"`
+p2_life_loss=`cat tf.out |grep p2_life_loss|cut -c59- | sed "s/\ /,/g"`
+time_loss=`cat tf.out |grep time_loss|cut -c56- | sed "s/\ /,/g"`
 echo -e "//session $session battle $battle step $i" >> tf_stats_targets.js
 echo -e "$targets," >> tf_stats_targets.js
 echo -e "//session $session battle $battle step $i" >> tf_stats_magic.js
 echo -e "$magic," >> tf_stats_magic.js
 echo -e "//session $session battle $battle step $i" >> tf_stats_bet.js
 echo -e "$bet," >> tf_stats_bet.js
+echo -e "//session $session battle $battle step $i" >> tf_stats_loss.js
+echo -e "$p1_life_loss\t$p2_life_loss\t$time_loss" >> tf_stats_loss.js
 rm tf.out
 
 cd $snes9x_dir
