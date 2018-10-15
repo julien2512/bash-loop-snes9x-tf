@@ -253,9 +253,17 @@ guess_p1_life=`cat *.situation | cut -f1`
 guess_p2_life=`cat *.situation | cut -f2`
 guess_time=`cat *.situation | cut -f3`
 cd $smc_dir
-file=`ls -x1 *.png | tail -n1`
-convert -pointsize 9 -fill red -draw "text 20,223 \"p1_life=$guess_p1_life p2_life=$guess_p2_life time=$guess_time\"" $file $file;
-echo -e "last file : $file"
+if [ $i -eq 0 ];
+then
+anewer=
+else
+anewer="-anewer $lastimage"
+fi
+lastimage=`ls -x1 *.png | tail -n1`
+for file in `find *.png $anewer`
+do convert -pointsize 9 -fill red -draw "text 20,223 \"p1_life=$guess_p1_life p2_life=$guess_p2_life time=$guess_time\"" $file $file;
+done
+echo -e "last file : $lastimage"
 echo -e "write on it : p1_life=$guess_p1_life p2_life=$guess_p2_life time=$guess_time"
 
 cd $snes9x_dir
