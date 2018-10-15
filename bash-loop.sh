@@ -247,6 +247,17 @@ echo -e "//session $session battle $battle step $i" >> tf_stats_loss.js
 echo -e "$p1_life_loss\t$p2_life_loss\t$time_loss" >> tf_stats_loss.js
 rm tf.out
 
+#render guess values on image
+cd "$tf_work"_output$i/images
+guess_p1_life=`cat *.situation | cut -f1`
+guess_p2_life=`cat *.situation | cut -f2`
+guess_time=`cat *.situation | cut -f3`
+cd $smc_dir
+file=`ls -x1 *.png | tail -n1`
+convert -pointsize 9 -fill red -draw "text 20,223 \"p1_life=$guess_p1_life p2_life=$guess_p2_life time=$guess_time\"" $file $file;
+echo -e "last file : $file"
+echo -e "write on it : p1_life=$guess_p1_life p2_life=$guess_p2_life time=$guess_time"
+
 cd $snes9x_dir
 
 # no more time case simulate death
