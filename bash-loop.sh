@@ -178,9 +178,9 @@ mkdir -p $tf_dir/"$tf_work"_output$((i+1))/images
 
 # pix2pix.py train i step 1
 #   input
-#     $tf_work : png + meta
+#     $tf_work : png + meta + last situation if any
 #   output
-#     $tf_work : model + outputs + next_commands
+#     $tf_work : model + outputs + next_commands + situation
 cd $tf_dir
 python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir $tf_work$i --max_epochs 1 --output_dir "$tf_work"_output$i --display_freq 1 --seed $seed $checkpoint
 # --checkpoint "$tf_work"_output$((i-1) # older release
@@ -225,18 +225,18 @@ cp `ls -x1 *.png | tail -n1` $tf_dir/$tf_work$((i+1))/$i.png
 
 # pix2pix.py train i step 2
 #   input
-#     $tf_work : png + meta + meta_targets
+#     $tf_work : png + meta + meta_targets + last situation if any
 #   output
-#     $tf_work : model + outputs + next_commands
+#     $tf_work : model + outputs + next_commands + situation
 cd $tf_dir
 python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir $tf_work$i --max_epochs 1 --output_dir "$tf_work"_output$i --display_freq 1 --seed $seed $checkpoint 2> tf.out
 cat tf.out
 targets=`cat tf.out |grep targets|cut -c54- |sed "s/\ /,/g"`
 magic=`cat tf.out |grep magic_target|cut -c59- |sed "s/\ /,/g"`
 bet=`cat tf.out |grep next_bet|cut -c55- |sed "s/\ /,/g"`
-p1_life_loss=`cat tf.out |grep p1_life_loss|cut -c59- | sed "s/\ /,/g"`
-p2_life_loss=`cat tf.out |grep p2_life_loss|cut -c59- | sed "s/\ /,/g"`
-time_loss=`cat tf.out |grep time_loss|cut -c56- | sed "s/\ /,/g"`
+p1_life_loss=`cat tf.out |grep " p1_life_loss"|cut -c59- |sed "s/\ /,/g"`
+p2_life_loss=`cat tf.out |grep " p2_life_loss"|cut -c59- |sed "s/\ /,/g"`
+time_loss=`cat tf.out |grep " time_loss"|cut -c56- |sed "s/\ /,/g"`
 echo -e "//session $session battle $battle step $i" >> tf_stats_targets.js
 echo -e "$targets," >> tf_stats_targets.js
 echo -e "//session $session battle $battle step $i" >> tf_stats_magic.js
@@ -248,7 +248,7 @@ echo -e "$p1_life_loss\t$p2_life_loss\t$time_loss" >> tf_stats_loss.js
 rm tf.out
 
 #render guess values on image
-cd "$tf_work"_output$i/images
+cd $tf_dir/"$tf_work"_output$i/images
 guess_p1_life=`cat *.situation | cut -f1`
 guess_p2_life=`cat *.situation | cut -f2`
 guess_time=`cat *.situation | cut -f3`
@@ -265,6 +265,10 @@ do convert -pointsize 9 -fill red -draw "text 20,223 \"p1_life=$guess_p1_life p2
 done
 echo -e "last file : $lastimage"
 echo -e "write on it : p1_life=$guess_p1_life p2_life=$guess_p2_life time=$guess_time"
+
+#copy situation to next step
+cd $tf_dir/"$tf_work"_output$i/images
+cp *.situation $tf_dir/$tf_work$((i+1))
 
 cd $snes9x_dir
 
