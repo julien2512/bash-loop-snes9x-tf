@@ -194,7 +194,11 @@ cp "$tf_work"_output$i/images/*.next_commands $smc_dir/$rom_name.next_commands
 #   output
 #     $smc_dir : rom_name.$((i+1)) + rom_name$number.png + rom_name.meta
 cd $snes9x_dir/gtk
-xvfb-run -a ./snes9x-gtk -savestateattheendfilename $smc_dir/$rom_name.$((i+1)) -killafterxframes 50 -snapshot $smc_dir/$rom_name.$((i)) -tensorflowcommandsfile1 $smc_dir/$rom_name.next_commands -port1 tensorflow1 -tensorflowrate 50 -autosnapshotrate 4 $smc_dir/$rom_name.smc
+# number of commands : 12
+# snapshot : every 4 frames
+# command  : every 4 frames
+# sequence size : 48 frames
+xvfb-run -a ./snes9x-gtk -savestateattheendfilename $smc_dir/$rom_name.$((i+1)) -killafterxframes 48 -snapshot $smc_dir/$rom_name.$((i)) -tensorflowcommandsfile1 $smc_dir/$rom_name.next_commands -port1 tensorflow1 -tensorflowrate 4 -autosnapshotrate 4 $smc_dir/$rom_name.smc
 
 # bus snes9x => tf_i step 2
 cd $smc_dir
