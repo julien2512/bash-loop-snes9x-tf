@@ -182,7 +182,7 @@ mkdir -p $tf_dir/"$tf_work"_output$((i+1))/images
 #   output
 #     $tf_work : model + outputs + next_commands + situation
 cd $tf_dir
-python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir $tf_work$i --max_epochs 1 --output_dir "$tf_work"_output$i --display_freq 1 --seed $seed $checkpoint
+python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir $tf_work$i --max_epochs 1 --output_dir "$tf_work"_output$i --display_freq 1 --seed $seed $checkpoint --images 12
 # --checkpoint "$tf_work"_output$((i-1) # older release
 
 # bus tf_i => snes9x step 1
@@ -246,7 +246,7 @@ done
 #   output
 #     $tf_work : model + outputs + next_commands + situation
 cd $tf_dir
-python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir $tf_work$i --max_epochs 1 --output_dir "$tf_work"_output$i --display_freq 1 --seed $seed $checkpoint 2> tf.out
+python tools/dockrun.py --nogpu True python pix2pix.py --mode train --input_dir $tf_work$i --max_epochs 1 --output_dir "$tf_work"_output$i --display_freq 1 --seed $seed $checkpoint --images 12 2> tf.out
 cat tf.out
 targets=`cat tf.out |grep targets|cut -c54- |sed "s/\ /,/g"`
 magic=`cat tf.out |grep magic_target|cut -c59- |sed "s/\ /,/g"`
