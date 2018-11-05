@@ -198,6 +198,7 @@ cd $snes9x_dir/gtk
 # snapshot : every 4 frames
 # command  : every 4 frames
 # sequence size : 48 frames
+# number of images : 12 images
 xvfb-run -a ./snes9x-gtk -savestateattheendfilename $smc_dir/$rom_name.$((i+1)) -killafterxframes 48 -snapshot $smc_dir/$rom_name.$((i)) -tensorflowcommandsfile1 $smc_dir/$rom_name.next_commands -port1 tensorflow1 -tensorflowrate 4 -autosnapshotrate 4 $smc_dir/$rom_name.smc
 
 # bus snes9x => tf_i step 2
@@ -223,9 +224,21 @@ echo -e "$p1_life\t$p2_life\t$time\t$p1_x1\t$p1_x2\t$p2_x1\t$p2_x2\t0\t0\t0\t0\t
 rm $i.meta_targets.tmp
 
 # bus snes9x => tf_i+1 step 1
+# . meta
+# . last 12 images
 cd $smc_dir
 cp $tf_dir/$tf_work$((i))/$i.meta_targets $tf_dir/$tf_work$((i+1))/$i.meta
-cp `ls -x1 *.png | tail -n1` $tf_dir/$tf_work$((i+1))/$i.png
+if [ $i -eq 0 ];
+then
+anewer=
+else
+anewer="-anewer $lastimage"
+fi
+lastimage=`ls -x1 *.png | tail -n1`
+for file in `find *.png $anewer`
+do cp $file $tf_dir/$tf_work$((i+1))/${file#Street}
+done
+#cp `ls -x1 *.png | tail -n12` $tf_dir/$tf_work$((i+1))/
 
 # pix2pix.py train i step 2
 #   input
@@ -257,13 +270,6 @@ guess_p1_life=`cat *.situation | cut -f1`
 guess_p2_life=`cat *.situation | cut -f2`
 guess_time=`cat *.situation | cut -f3`
 cd $smc_dir
-if [ $i -eq 0 ];
-then
-anewer=
-else
-anewer="-anewer $lastimage"
-fi
-lastimage=`ls -x1 *.png | tail -n1`
 for file in `find *.png $anewer`
 do convert -pointsize 9 -fill red -draw "text 20,223 \"p1_life=$guess_p1_life p2_life=$guess_p2_life time=$guess_time\"" $file $file;
 done
