@@ -271,7 +271,7 @@ guess_p2_life=`cat *.situation | cut -f2`
 guess_time=`cat *.situation | cut -f3`
 cd $smc_dir
 for file in `find *.png $anewer`
-do convert -pointsize 9 -fill red -draw "text 20,223 \"p1_life=$guess_p1_life p2_life=$guess_p2_life time=$guess_time\"" $file $file;
+do convert -pointsize 9 -fill red -draw "text 20,223 \"p1_life=$guess_p1_life p2_life=$guess_p2_life time=$guess_time\" step=$i" $file $file;
 done
 echo -e "last file : $lastimage"
 echo -e "write on it : p1_life=$guess_p1_life p2_life=$guess_p2_life time=$guess_time"
