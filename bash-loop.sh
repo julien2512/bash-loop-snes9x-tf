@@ -236,7 +236,14 @@ anewer="-anewer $lastimage"
 fi
 lastimage=`ls -x1 *.png | tail -n1`
 for file in `find *.png $anewer`
-do cp $file $tf_dir/$tf_work$((i+1))/${file#Street}
+do
+# On one battle over three, Ryu is blinded but the life bar.
+modulo=$((battle % 3))
+if [ $modulo == 2 ];
+then convert -fill black -draw "rectangle 0,50 270,250" $file $file;
+fi
+# save file for next learning
+cp $file $tf_dir/$tf_work$((i+1))/${file#Street}
 done
 #cp `ls -x1 *.png | tail -n12` $tf_dir/$tf_work$((i+1))/
 
@@ -271,7 +278,9 @@ guess_p2_life=`cat *.situation | cut -f2`
 guess_time=`cat *.situation | cut -f3`
 cd $smc_dir
 for file in `find *.png $anewer`
-do convert -pointsize 9 -fill red -draw "text 20,223 \"p1_life=$guess_p1_life p2_life=$guess_p2_life time=$guess_time step=$i\"" $file $file;
+do 
+#add guess values (from 3dconv bunch, applied to all)
+convert -pointsize 9 -fill red -draw "text 20,223 \"p1_life=$guess_p1_life p2_life=$guess_p2_life time=$guess_time step=$i\"" $file $file;
 done
 echo -e "last file : $lastimage"
 echo -e "write on it : p1_life=$guess_p1_life p2_life=$guess_p2_life time=$guess_time"
