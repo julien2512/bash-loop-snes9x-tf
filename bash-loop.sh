@@ -158,9 +158,9 @@ cp $tf_dir/$tf_work/* $tf_dir/$tf_work$i/
 #mkdir -p $tf_dir/$tf_work$((i+1))
 #mkdir -p $tf_dir/"$tf_work"_output$((i+1))/images
 
-if [ -d $tf_dir/"$tf_work"_output ];
+if [ -d $tf_dir/save_"$tf_work"_output ];
 then
-  checkpoint="--checkpoint ""$tf_work""_output"
+  checkpoint="--checkpoint save_""$tf_work""_output"
 else
   checkpoint=""
 fi
@@ -239,8 +239,8 @@ for file in `find *.png $anewer`
 do
 # On one battle over three, Ryu is blinded but the life bar.
 modulo=$((battle % 3))
-if [ $modulo == 2 ];
-then convert -fill black -draw "rectangle 0,50 270,250" $file $file;
+if [ $modulo == 1 ];
+then convert -fill black -draw "rectangle 0,70 270,250" $file $file;
 fi
 # save file for next learning
 cp $file $tf_dir/$tf_work$((i+1))/${file#Street}
@@ -410,7 +410,7 @@ then
 else
   mkdir -p "$tf_work"_output/images
 fi
-cp -R "$tf_work"_output$((i-1))/* "$tf_work"_output
+cp -R "$tf_work"_output$((i-1))/* save_"$tf_work"_output
 
 cd $snes9x_dir
 write_js_stats
