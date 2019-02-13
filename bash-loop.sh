@@ -88,9 +88,9 @@ write_js_stats() {
     echo "var time_max=$time_max;" >> ./stats.js
     echo "var best_match=\"$best_match\";" >> ./stats.js
     echo "var win_matchs=\"$win_matchs\";" >> ./stats.js
-    echo "var p1_life_loss=$p1_life_loss" >> ./stats.js
-    echo "var p2_life_loss=$p2_life_loss" >> ./stats.js
-    echo "var time_loss=$time_loss" >> ./stats.js
+    echo "var p1_life_loss=$p1_life_loss;" >> ./stats.js
+    echo "var p2_life_loss=$p2_life_loss;" >> ./stats.js
+    echo "var time_loss=$time_loss;" >> ./stats.js
 }
 echo_stats() {
 echo -e "----------------------------------------------------"
@@ -241,6 +241,7 @@ do
 modulo=$((battle % 3))
 if [ $modulo == 1 ];
 then convert -fill black -draw "rectangle 0,70 270,250" $file $file;
+convert $file -define png:color-type=2 $file
 fi
 # save file for next learning
 cp $file $tf_dir/$tf_work$((i+1))/${file#Street}
@@ -408,7 +409,7 @@ if [ -d "$tf_work"_output/images ];
 then
   rm -Rf "$tf_work"_output/*
 else
-  mkdir -p "$tf_work"_output/images
+  mkdir -p save_"$tf_work"_output/images
 fi
 cp -R "$tf_work"_output$((i-1))/* save_"$tf_work"_output
 
